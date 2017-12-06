@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 import emcee
 import config
 from functions import *
+import time
 
 def lnprior(theta, priors):
 	for i in range(len(theta)):
@@ -38,6 +39,8 @@ if __name__ == "__main__":
 	x = np.loadtxt(datadir+specname)
 	x = x[500:1300]
 
+	t0 = time.time()
+
 	components = config.returnComponents()
 
 	key_list = components.keys()
@@ -51,7 +54,7 @@ if __name__ == "__main__":
 
 	ndim,nwalkers = len(p0),1000
 
-	emceep0 = np.vstack([np.random.normal(p0[i],1,nwalkers) for i in range(len(p0))]).T
+	emceep0 = np.vstack([np.random.normal(p0[i],10,nwalkers) for i in range(len(p0))]).T
 
 	sampler = emcee.EnsembleSampler(
 		nwalkers,
@@ -61,6 +64,9 @@ if __name__ == "__main__":
 		)
 
 	sampler.run_mcmc(emceep0,1000)
+
+	t1 = time.time()
+	print "Completed in %.2f seconds" % (t1-t0)
 
 	samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 
@@ -74,7 +80,6 @@ if __name__ == "__main__":
 
 	plt.plot(x[:,0],x[:,1],'k')
 	plt.plot(x[:,0],sum(func_list[i](x[:,0],theta[i]) for i in range(len(func_list))))
-	plt.plot(x[:,0],150.*x[:,0]**-0.5)
 	for i in range(len(func_list)):
 		plt.plot(x[:,0],func_list[i](x[:,0],theta[i]))
 	plt.show()
