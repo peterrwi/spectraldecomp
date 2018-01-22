@@ -1,0 +1,27 @@
+# Load in the spectrum
+specloc ../data/testspectrum/testspectrum.txt
+
+# Load in the list of components
+funcfile standardfunctions
+
+## Do a grid search, using (and varying) functions 1,2,5,6,7,8. Grid search by varying the initial guesses for function 1 parameter 0 in 5 steps from 0.5 to 1, and function 2 parameter 0 in 10 steps from 0.5 to 1.5. Keep fixed function 1 parameter 2.
+#grid 1,2,5,6,7,8
+#1,2
+#0,0
+#0.5,1,10;0.5,1.5,10
+#fixed 1,2
+#outfile grid1.out
+#plotfit
+#end
+
+
+#quit
+
+
+## Input the best fit results from the previous grid search as the initial guess. Do a fit, using functions 1,2,5,6,7,8, varying all parameters
+fit 1,2,5,6,7,8
+startfile grid1.out
+constraintfile run1.constraints
+#plotfit
+end
+

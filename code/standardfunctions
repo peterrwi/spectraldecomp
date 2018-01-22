@@ -1,0 +1,63 @@
+# Number of the component
+# Name of the component (string)
+# Name of the function to use (must be from functions.py)
+# First guess at parameters
+# Prior bounds for the parameters (lower1,upper1;lower2,upper2;...)
+# LaTeX name for the component
+
+
+1)
+Starlight
+Starlight
+0.7,0.0417,100.
+0.0,5.0;0.04,0.04172;0.0,1000.
+${\rm Starlight}$
+
+2)
+Power law continuum
+PowerLaw
+1.39347226909,-2.1339289899
+0.0,1e9;-2.5,-0.5
+${\rm Power~Law}$
+
+3)
+Fe II
+FeII
+0.1,0.1,0.1,0.1,0.1,0.0417
+0.0,10.0;0.0,10.0;0.0,10.0;0.0,10.0;0.0,10.0;0.04,0.043
+${\rm Fe~II}$
+
+4)
+He I 4922
+Gauss
+2.,5127.,8.
+0,10.;5120,5135;0.,50.
+${\rm He~I~4922}$
+
+5)
+Hbeta broad
+GaussHermite
+1,5062.,20.,1,1,1,1,1
+0.0,1e9;-1e9,1e9;-1e9,1e9;-1e9,1e9;-1e9,1e9;-1e9,1e9;-1e9,1e9;-1e9,1e9
+${\rm H}\beta~{\rm broad}$
+
+6)
+Hbeta narrow
+Gauss
+5.47071302e+00,5.06379950e+03,3.35876967e+00
+0.0,1e9;-1e9,1e9;-1e9,1e9
+${\rm H}\beta~{\rm narrow}$
+
+7)
+OIII Gaussian 1
+Gauss
+10,5165.5,4
+0.0,1e9;-1e9,1e9;-1e9,1e9
+${\rm OIII~Gaussian~1}$
+
+8)
+OIII Gaussian 2
+Gauss
+30,5215.8,4
+0.0,1e9;-1e9,1e9;-1e9,1e9
+${\rm OIII~Gaussian~2}$
