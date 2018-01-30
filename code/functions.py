@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.interpolate import interp1d
-from PyAstronomy import pyasl
 import matplotlib.pyplot as plt
 import time
+from scipy import signal
+from scipy.ndimage import filters
 
 def log_rebin(lamRange, spec, oversample=False, velscale=None, flux=False):
     """
@@ -59,52 +60,6 @@ def log_rebin(lamRange, spec, oversample=False, velscale=None, flux=False):
 
     return specNew, logLam, velscale
 
-def gaussian_filter1d(spec, sig):
-    """
-    From https://github.com/moustakas/impy/blob/master/lib/ppxf/ppxf_util.py
-
-    Convolve a spectrum by a Gaussian with different sigma for every
-    pixel, given by the vector "sigma" with the same size as "spec".
-    If all sigma are the same this routine produces the same output as
-    scipy.ndimage.gaussian_filter1d, except for the border treatment.
-    Here the first/last p pixels are filled with zeros.
-    When creating  template library for SDSS data, this implementation
-    is 60x faster than the naive loop over pixels.
-    """
-
-    sig = sig.clip(0.01)  # forces zero sigmas to have 0.01 pixels
-    p = int(np.ceil(np.max(3*sig)))
-    m = 2*p + 1  # kernel size
-    x2 = np.linspace(-p, p, m)**2
-
-    n = spec.size
-    a = np.zeros((m, n))
-    for j in range(m):   # Loop over the small size of the kernel
-        a[j, p:-p] = spec[j:n-m+j+1]
-
-    gau = np.exp(-x2[:, None]/(2*sig**2))
-    gau /= np.sum(gau, 0)[None, :]  # Normalize kernel
-
-    conv_spectrum = np.sum(a*gau, 0)
-
-    return conv_spectrum
-
-def convolveGauss(x,y,sig,pad):
-	conv = np.zeros(len(x))
-	dx = x[1]-x[0]
-	xgauss = np.arange(-dx*pad,dx*pad,dx)
-	ygauss = Gauss().func(xgauss,(1.,0.,sig))
-
-	for i in range(len(x)):
-		l0 = x[i]
-		minsum = max(0,i-pad)
-		maxsum = min(len(x),i+pad)
-		xx = np.array([x[j] for j in range(minsum,maxsum)])
-		yy = np.array([y[j] * ygauss[j-i+pad] for j in range(minsum,maxsum)])
-		gaussian_trimmed = np.array([ygauss[j-i+pad] for j in range(minsum,maxsum)])
-		conv[i] = np.sum(yy)/np.sum(gaussian_trimmed)
-	return conv
-
 def logBroaden(x,dv):
 	res=2.
 	intres=10
@@ -115,12 +70,8 @@ def logBroaden(x,dv):
 	#print "log_rebin: ",time.time()-t0
 
 	# Do the broadening
-	#t0 = time.time()
-	#dv = 100.
-	Floglbroad = gaussian_filter1d(Flogl,dv/velscale)
-	#print "Broadening: ",time.time()-t0
-	Flogl = Floglbroad
-
+	Flogl = filters.gaussian_filter1d(Flogl,dv/velscale)
+	
 	#plt.figure()
 	#plt.plot(logl[300:500],Flogl[300:500])
 	#plt.plot(logl[300:500],Floglbroad[300:500])
@@ -263,11 +214,6 @@ def testing():
 
 if __name__=="__main__":
 	testing()
-
-
-
-
-
 
 
 

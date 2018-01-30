@@ -1,8 +1,6 @@
 from pylab import *
 import numpy as np
 import matplotlib.pyplot as plt
-import astropy.io.fits as fits
-from astropy import units as u
 import scipy.optimize as op
 from scipy.interpolate import interp1d
 import mpyfit
@@ -25,16 +23,44 @@ class Component():
 		self.fixed = [False]*self.nparms
 
 def deviates(theta,args):
-	x, y, func_list, p0_len_list = args
-	p0 = [0]*len(p0_len_list)
-	for i in range(len(p0)):
-		indexstart = sum(p0_len_list[i] for i in range(i))
-		p0[i] = theta[indexstart:indexstart+p0_len_list[i]]
-	
-	model = sum(func_list[i](x,p0[i]) for i in range(len(func_list)))
+	x,y,func,components = args	
+	model = func(x,theta,components)
 	deviates = y - model
-	
 	return deviates
+
+def buildFunction(x,theta,components):
+	keys = sort(components.keys())
+	func_list = [components[key].func for key in keys]
+	p0_list = [components[key].params for key in keys]
+	p0_len_list = [len(components[key].params) for key in keys]
+	prior_list = [components[key].prior for key in keys]
+	fixed_list = [components[key].fixed for key in keys]
+
+	p0 = reduce(lambda x,y:x+y,p0_list)
+	priors = reduce(lambda x,y:x+y,prior_list)
+	fixed = reduce(lambda x,y:x+y,fixed_list)
+	limited = [[True,True]]*len(p0)
+
+	p0new = []
+	args = []
+	i_counter = 0
+	for i in range(len(fixed)):
+		if fixed[i]:
+			args.append(p0[i])
+		else:
+			args.append(theta[i_counter])
+			p0new.append(p0[i])
+			i_counter+=1
+
+	args_array = [0]*len(func_list)
+	for i in range(len(args_array)):
+		startindex = sum(p0_len_list[j] for j in range(i))
+		endindex = sum(p0_len_list[j] for j in range(i+1))
+		args_array[i] = args[startindex:endindex]
+
+	f = sum(func_list[i](x,args_array[i]) for i in range(len(func_list)))
+
+	return f
 
 def readConfigFile(configfile):
 	with open(configfile,'r') as f:
@@ -173,7 +199,7 @@ def executeFit(components,startfile,x):
 	components = readStartFile(startfile,components)
 	keys = sort(components.keys())
 
-	pfit,results = mpfitOptimize(deviates,x,components)
+	pfit,results = fitFunction(x,components)
 	return pfit,results
 
 def gridSearch(components,startfile,x,gridfuncs,gridparms,gridrange):
@@ -192,7 +218,7 @@ def gridSearch(components,startfile,x,gridfuncs,gridparms,gridrange):
 	for j in range(len(mesh[0].ravel())):
 		for i in range(Ndims):
 			components[gridfuncs[i]].params[gridparms[i]] = mesh[i].ravel()[j]
-		pfit,results = mpfitOptimize(deviates,x,components)
+		pfit,results = fitFunction(x,components)
 	
 		print "chi^2: ",results['orignorm']," --> ",results['bestnorm']
 		gridresults.append([results['bestnorm'],pfit,results])
@@ -202,7 +228,9 @@ def gridSearch(components,startfile,x,gridfuncs,gridparms,gridrange):
 	
 	return gridresults[bestrun,1],gridresults[bestrun,2]
 
-def mpfitOptimize(deviates,x,components):
+def fitFunction(x,components):
+	# Do the fitting
+	print "Fitting using mpyfit..."
 	keys = sort(components.keys())
 	func_list = [components[key].func for key in keys]
 	p0_list = [components[key].params for key in keys]
@@ -225,9 +253,24 @@ def mpfitOptimize(deviates,x,components):
 		parinfo[i]['fixed'] = fixed[i]
 		parinfo[i]['tied'] = tied[i]
 
-	# Do the fitting
-	print "Fitting using mpyfit..."
-	pfit, results = mpyfit.fit(deviates, p0, (x[:,0],x[:,1],func_list,p0_len_list),parinfo=parinfo)
+	p0new = []
+	i_counter = 0
+	for i in range(len(fixed)):
+		if not fixed[i]:
+			p0new.append(p0[i])
+			i_counter+=1
+
+	pfit, results = mpyfit.fit(deviates, p0new, (x[:,0],x[:,1],buildFunction,components))
+
+	pfit_complete = []
+	i_counter = 0
+	for i in range(len(fixed)):
+		if fixed[i]:
+			pfit_complete.append(p0[i])
+		else:
+			pfit_complete.append(pfit[i_counter])
+			i_counter += 1
+	pfit = pfit_complete
 
 	# Put back into dictionary form
 	pbest = {}
@@ -314,8 +357,7 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
-
+	
 
 
 
