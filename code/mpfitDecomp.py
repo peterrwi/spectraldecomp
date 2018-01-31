@@ -25,6 +25,14 @@ class Component():
 
 
 def deviates(theta, args):
+    """
+    Computes the difference between the model and the data, given parameters
+    theta. This is the form of the input function needed for mpfit.
+
+    :param theta: Array of parameters that go into the function in args
+    :param args: x, y, func, components
+    :return: deviates = data - model
+    """
     x, y, func, components = args
     model = func(x, theta, components)
     deviates = y - model
@@ -67,6 +75,13 @@ def buildFunction(x, theta, components):
 
 
 def readConfigFile(configfile):
+    """
+    Reads in the configuration file, goes through it line by line, and executes
+    the commands.
+
+    :param configfile: Path to the configuration file
+    :return: None
+    """
     with open(configfile, 'r') as f:
         lines = f.read().splitlines()
     linenumbers = []
@@ -181,6 +196,15 @@ def readConfigFile(configfile):
 
 
 def readStartFile(startfile, components):
+    """
+    Reads a startfile with initial parameter guess values. Typically, this will
+    be an output file from a previous run.
+
+    :param startfile: Path to the input file.
+    :param components: Dictionary of Component objects used in the fit
+    :return: Dictionary of Component objects with the initial parameter
+    guesses updated with the values stored in the startfile.
+    """
     if startfile == None:
         return components
     print "Using the startfile %s" % startfile
@@ -195,6 +219,14 @@ def readStartFile(startfile, components):
 
 
 def saveStartFile(outfile, pfit):
+    """
+    Saves the output of a fit into a file with the proper format to be read in
+    by readStartFile
+
+    :param outfile: Path to output file for saving.
+    :param pfit: Best fit parameters from mpfit.
+    :return: None
+    """
     with open(outfile, 'w') as f:
         for key in sort(pfit.keys()):
             f.write(key + ",")
@@ -203,14 +235,37 @@ def saveStartFile(outfile, pfit):
 
 
 def executeFit(components, startfile, x):
+    """
+    Executes a single fit of parameters using mpfit. This is the command that
+    is run when the "fit" command is passed through the configuration file.
+
+    :param components: Dictionary of Component objects to be used in the fit.
+    :param startfile: File with initial guesses to use in the fit.
+    :param x: x values for the fit (e.g. wavelength)
+    :return: pfit: Best fit parameters
+          results: Information about the run
+    """
     components = readStartFile(startfile, components)
-    keys = sort(components.keys())
 
     pfit, results = fitFunction(x, components)
     return pfit, results
 
 
 def gridSearch(components, startfile, x, gridfuncs, gridparms, gridrange):
+    """
+    Performs a grid search over the parameters defined in gridfuncs and
+    gridparms. This is run when the "grid" command is in the configuration
+    file.
+
+    :param components: Dictionary of Component objects to be used in the fit.
+    :param startfile: File with initial guesses to use in the fit.
+    :param x: x values for the fit (e.g. wavelength)
+    :param gridfuncs: Functions to which the grid search parameters belong.
+    :param gridparms: Parameters for each function in gridfuncs over which to
+    conduct the grid search.
+    :param gridrange: Range over which to conduct the grid search.
+    :return: pfit and results for best runs
+    """
     Ndims = len(gridfuncs)
 
     components = readStartFile(startfile, components)
@@ -288,7 +343,17 @@ def fitFunction(x, components):
     return pbest, results
 
 
-def plotFit(x, components, pfit, saveloc, showtag=True):
+def plotFit(x, components, pfit, saveloc=False, showtag=True):
+    """
+    Plots the data and the fit using parameters in pfit and components.
+
+    :param x: x values of the data (e.g. wavelength)
+    :param components: Dictionary of Component objects used in the fit
+    :param pfit: Best fit parameters output from the fit
+    :param saveloc: If not False, path to save the figure
+    :param showtag: If True, display the plot to the user.
+    :return: None
+    """
     keys = sort(components.keys())
     func_list = [components[key].func for key in keys]
     theta = [pfit[key] for key in keys]
