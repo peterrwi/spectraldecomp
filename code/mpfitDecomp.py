@@ -1,11 +1,6 @@
 from pylab import *
-import numpy as np
-import matplotlib.pyplot as plt
-import scipy.optimize as op
-from scipy.interpolate import interp1d
 import mpyfit
 from functions import *
-import time
 import sys
 import re
 
